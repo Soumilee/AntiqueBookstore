@@ -1,6 +1,10 @@
-FROM nginx:alpine
-COPY /dist/antique-bookstore /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/nginx.conf
-EXPOSE 80 
-CMD ["nginx","-g","daemon off;"]
-
+FROM maven:3.6.0-jdk-8-alpine AS build
+WORKDIR /app
+COPY ./pom.xml ./pom.xml
+RUN mvn dependency:go-offline -B
+COPY ./src ./src
+RUN mvn package -DskipTests
+FROM openjdk:8-jre-slim
+WORKDIR /app
+COPY --from=build /app/target/*.jar /app/antiquebookstore.jar
+CMD ["java", "-jar", "/app/antiquebookstore.jar"]
